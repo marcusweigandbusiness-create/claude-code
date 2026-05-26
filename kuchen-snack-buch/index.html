@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kuchen- &amp; Snackbuch</title>
+<style>
+  :root {
+    --bg: #f4f1ea;
+    --card: #ffffff;
+    --ink: #2b2620;
+    --muted: #8a8174;
+    --line: #e6e0d4;
+    --kuchen: #c9821f;
+    --kuchen-bg: #fbf0dc;
+    --snack: #1f8a8a;
+    --snack-bg: #ddf0f0;
+    --ok: #3a8a3a;
+    --due: #d97706;
+    --over: #c0392b;
+    --accent: #6b4f2a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.45;
+    -webkit-text-size-adjust: 100%;
+  }
+  header {
+    background: var(--accent);
+    color: #fff;
+    padding: 16px 18px;
+    text-align: center;
+  }
+  header h1 { margin: 0; font-size: 1.3rem; letter-spacing: .3px; }
+  header .today { font-size: .9rem; opacity: .9; margin-top: 2px; }
+
+  nav {
+    display: flex;
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+    position: sticky; top: 0; z-index: 10;
+  }
+  nav button {
+    flex: 1;
+    border: none;
+    background: none;
+    padding: 14px 4px;
+    font-size: .95rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+  }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); }
+  nav button .badge {
+    display: inline-block; min-width: 18px; padding: 0 5px;
+    background: var(--over); color: #fff; border-radius: 10px;
+    font-size: .72rem; line-height: 18px; margin-left: 4px; vertical-align: middle;
+  }
+
+  main { max-width: 720px; margin: 0 auto; padding: 16px; }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  h2 { font-size: 1.05rem; margin: 4px 0 12px; }
+  .hint { color: var(--muted); font-size: .85rem; margin: -6px 0 14px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  /* Item row */
+  .item {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left-width: 5px;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+  }
+  .item.kuchen { border-left-color: var(--kuchen); }
+  .item.snack { border-left-color: var(--snack); }
+  .item .grow { flex: 1; min-width: 0; }
+  .item .name { font-weight: 600; }
+  .item .meta { font-size: .82rem; color: var(--muted); }
+  .tag {
+    display: inline-block; font-size: .7rem; font-weight: 700;
+    padding: 2px 7px; border-radius: 20px; vertical-align: middle; margin-right: 6px;
+  }
+  .tag.kuchen { background: var(--kuchen-bg); color: var(--kuchen); }
+  .tag.snack { background: var(--snack-bg); color: var(--snack); }
+  .status { font-size: .82rem; font-weight: 600; }
+  .status.ok { color: var(--ok); }
+  .status.due { color: var(--due); }
+  .status.over { color: var(--over); }
+
+  .actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .qty-in {
+    width: 56px; padding: 7px; border: 1px solid var(--line); border-radius: 8px;
+    font-size: .95rem; text-align: center;
+  }
+  button.btn {
+    border: none; border-radius: 8px; padding: 9px 12px;
+    font-size: .85rem; font-weight: 600; cursor: pointer;
+  }
+  .btn.throw { background: var(--over); color: #fff; }
+  .btn.used { background: var(--ok); color: #fff; }
+  .btn.del { background: #efe9dd; color: var(--muted); padding: 9px 10px; }
+  .btn.primary { background: var(--accent); color: #fff; padding: 13px; font-size: 1rem; width: 100%; }
+
+  /* Form */
+  label { display: block; font-size: .85rem; font-weight: 600; margin: 12px 0 5px; }
+  input[type=text], input[type=number], input[type=date] {
+    width: 100%; padding: 12px; border: 1px solid var(--line);
+    border-radius: 10px; font-size: 1rem; background: #fff; color: var(--ink);
+  }
+  .segmented { display: flex; gap: 8px; }
+  .segmented button {
+    flex: 1; padding: 14px; border-radius: 10px; border: 2px solid var(--line);
+    background: #fff; font-weight: 700; font-size: 1rem; cursor: pointer; color: var(--muted);
+  }
+  .segmented button.sel.kuchen { border-color: var(--kuchen); background: var(--kuchen-bg); color: var(--kuchen); }
+  .segmented button.sel.snack { border-color: var(--snack); background: var(--snack-bg); color: var(--snack); }
+  .row2 { display: flex; gap: 10px; }
+  .row2 > div { flex: 1; }
+
+  .empty { text-align: center; color: var(--muted); padding: 30px 10px; }
+  .empty .big { font-size: 2rem; }
+
+  /* Stats */
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px; text-align: center;
+  }
+  .stat .num { font-size: 1.8rem; font-weight: 800; }
+  .stat .lbl { font-size: .8rem; color: var(--muted); }
+  .bar { height: 10px; border-radius: 6px; background: var(--line); overflow: hidden; margin-top: 6px; }
+  .bar > span { display: block; height: 100%; background: var(--over); }
+  table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; }
+  td.r, th.r { text-align: right; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+    background: var(--ink); color: #fff; padding: 10px 18px; border-radius: 24px;
+    font-size: .9rem; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 50;
+  }
+  .toast.show { opacity: .95; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Kuchen- &amp; Snackbuch</h1>
+  <div class="today" id="todayLabel"></div>
+</header>
+
+<nav>
+  <button data-view="heute" class="active">Heute <span class="badge" id="navBadge" style="display:none"></span></button>
+  <button data-view="eintragen">Eintragen</button>
+  <button data-view="bestand">Bestand</button>
+  <button data-view="statistik">Statistik</button>
+</nav>
+
+<main>
+  <!-- HEUTE -->
+  <section class="view active" id="view-heute">
+    <h2>Heute Abend wegwerfen</h2>
+    <p class="hint">Alles, was heute (oder früher) seinen letzten Tag erreicht hat. Mit <b>Weggeworfen</b> in den Müll buchen, mit <b>Verbraucht</b> als verkauft/aufgebraucht abhaken.</p>
+    <div id="heuteList"></div>
+  </section>
+
+  <!-- EINTRAGEN -->
+  <section class="view" id="view-eintragen">
+    <h2>Neuen Eintrag anlegen</h2>
+    <div class="card">
+      <label>Was wurde gemacht?</label>
+      <div class="segmented">
+        <button type="button" id="typeKuchen" class="kuchen" data-type="kuchen">🍰 Kuchen</button>
+        <button type="button" id="typeSnack" class="snack" data-type="snack">🥪 Snack</button>
+      </div>
+
+      <label for="fName">Bezeichnung</label>
+      <input type="text" id="fName" placeholder="z. B. Käsekuchen / Schinken-Käse-Croissant" autocomplete="off">
+
+      <div class="row2">
+        <div>
+          <label for="fQty">Menge</label>
+          <input type="number" id="fQty" min="1" step="1" value="1">
+        </div>
+        <div>
+          <label for="fDate">Herstelldatum</label>
+          <input type="date" id="fDate">
+        </div>
+      </div>
+
+      <p class="hint" id="expiryPreview" style="margin-top:14px;margin-bottom:0;"></p>
+      <button class="btn primary" id="addBtn" style="margin-top:14px;">Eintragen</button>
+    </div>
+    <p class="hint">Regel: Snacks halten <b>2 Tage</b>, Kuchen <b>4 Tage</b>. Weggeworfen wird am Abend des letzten Tages (Snack Montag → Dienstagabend, Kuchen Montag → Donnerstagabend).</p>
+  </section>
+
+  <!-- BESTAND -->
+  <section class="view" id="view-bestand">
+    <h2>Aktueller Bestand</h2>
+    <p class="hint" id="bestandSummary"></p>
+    <div id="bestandList"></div>
+  </section>
+
+  <!-- STATISTIK -->
+  <section class="view" id="view-statistik">
+    <h2>Abschreib-Statistik</h2>
+    <div class="stat-grid" style="margin-bottom:14px;">
+      <div class="stat"><div class="num" id="stWeek">0</div><div class="lbl">weggeworfen (letzte 7 Tage)</div></div>
+      <div class="stat"><div class="num" id="stTotal">0</div><div class="lbl">weggeworfen (gesamt)</div></div>
+    </div>
+    <div class="card">
+      <b>Quote (gesamt)</b>
+      <div id="rateText" class="hint" style="margin:6px 0;"></div>
+      <div class="bar"><span id="rateBar" style="width:0%"></span></div>
+    </div>
+    <div class="card">
+      <b>Nach Sorte (weggeworfen, gesamt)</b>
+      <table style="margin-top:8px;">
+        <tr><th>Sorte</th><th class="r">Verbraucht</th><th class="r">Weggeworfen</th></tr>
+        <tr><td>🍰 Kuchen</td><td class="r" id="kUsed">0</td><td class="r" id="kThrown">0</td></tr>
+        <tr><td>🥪 Snack</td><td class="r" id="sUsed">0</td><td class="r" id="sThrown">0</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <b>Letzte Abschreibungen</b>
+      <div id="recentList" style="margin-top:8px;"></div>
+    </div>
+    <button class="btn del" id="resetBtn" style="width:100%;margin-top:4px;">Alle Daten löschen</button>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORAGE_KEY = "ksb_entries_v1";
+  var LIFESPAN = { kuchen: 4, snack: 2 };       // Tage Haltbarkeit
+  var WD = ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+
+  // ---- Datum-Helfer (lokale Tage, ohne Uhrzeit) ----
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function todayYMD() { return ymd(new Date()); }
+  function toDate(s) { var p = s.split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function addDays(s, n) { var d = toDate(s); d.setDate(d.getDate() + n); return ymd(d); }
+  function diffDays(a, b) { return Math.round((toDate(b) - toDate(a)) / 86400000); }
+  function formatDE(s) { var p = s.split("-"); return p[2] + "." + p[1] + "." + p[0]; }
+  function weekdayAbend(s) { return WD[toDate(s).getDay()] + "abend"; }
+
+  // Letzter Tag = Herstelldatum + (Haltbarkeit - 1); an dessen Abend wird weggeworfen.
+  function discardDate(e) { return addDays(e.productionDate, LIFESPAN[e.type] - 1); }
+  // > 0 = noch haltbar, 0 = heute Abend weg, < 0 = überfällig
+  function daysUntil(e) { return diffDays(todayYMD(), discardDate(e)); }
+
+  // ---- Speicher ----
+  var entries = [];
+  function load() {
+    try { entries = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch (e) { entries = []; }
+  }
+  function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); }
+  function byId(id) { return entries.filter(function (e) { return e.id === id; })[0]; }
+
+  function toast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg; t.classList.add("show");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { t.classList.remove("show"); }, 1800);
+  }
+
+  // ---- Aktionen ----
+  function addEntry(type, name, qty, date) {
+    entries.push({
+      id: "e" + Date.now() + Math.random().toString(36).slice(2, 6),
+      type: type, name: name, quantity: qty, productionDate: date,
+      discarded: false, discardedDate: null, discardedQty: 0
+    });
+    save();
+  }
+  function markDiscarded(id, thrownQty) {
+    var e = byId(id); if (!e) return;
+    e.discarded = true;
+    e.discardedDate = todayYMD();
+    e.discardedQty = Math.max(0, Math.min(thrownQty, e.quantity));
+    save(); renderAll();
+    toast(e.discardedQty > 0 ? (e.discardedQty + "× weggeworfen") : "Als verbraucht gebucht");
+  }
+  function deleteEntry(id) {
+    entries = entries.filter(function (e) { return e.id !== id; });
+    save(); renderAll(); toast("Eintrag gelöscht");
+  }
+
+  // ---- Rendering: ein Artikel ----
+  function statusInfo(e) {
+    var d = daysUntil(e);
+    if (d < 0) return { cls: "over", text: "Überfällig seit " + (-d) + " Tag" + (-d === 1 ? "" : "en") };
+    if (d === 0) return { cls: "due", text: "Heute Abend wegwerfen" };
+    if (d === 1) return { cls: "ok", text: "Noch heute + morgen (weg " + weekdayAbend(discardDate(e)) + ")" };
+    return { cls: "ok", text: "Noch " + d + " Tage (weg " + weekdayAbend(discardDate(e)) + ")" };
+  }
+
+  function itemRow(e, opts) {
+    opts = opts || {};
+    var st = statusInfo(e);
+    var div = document.createElement("div");
+    div.className = "item " + e.type;
+
+    var info = document.createElement("div");
+    info.className = "grow";
+    info.innerHTML =
+      '<div class="name"><span class="tag ' + e.type + '">' + (e.type === "kuchen" ? "Kuchen" : "Snack") + '</span>' +
+      escapeHtml(e.name) + ' · ' + e.quantity + '×</div>' +
+      '<div class="meta">Gemacht ' + formatDE(e.productionDate) + ' · <span class="status ' + st.cls + '">' + st.text + '</span></div>';
+    div.appendChild(info);
+
+    var act = document.createElement("div");
+    act.className = "actions";
+
+    if (opts.throwAction) {
+      var qin = document.createElement("input");
+      qin.type = "number"; qin.min = "0"; qin.value = e.quantity; qin.className = "qty-in";
+      qin.title = "Menge, die in den Müll geht";
+      act.appendChild(qin);
+
+      var bThrow = document.createElement("button");
+      bThrow.className = "btn throw"; bThrow.textContent = "Weggeworfen";
+      bThrow.onclick = function () { markDiscarded(e.id, parseInt(qin.value, 10) || 0); };
+      act.appendChild(bThrow);
+
+      var bUsed = document.createElement("button");
+      bUsed.className = "btn used"; bUsed.textContent = "Verbraucht";
+      bUsed.title = "Alles verkauft / aufgebraucht – nichts weggeworfen";
+      bUsed.onclick = function () { markDiscarded(e.id, 0); };
+      act.appendChild(bUsed);
+    }
+    if (opts.deleteAction) {
+      var bDel = document.createElement("button");
+      bDel.className = "btn del"; bDel.textContent = "✕";
+      bDel.title = "Eintrag löschen";
+      bDel.onclick = function () { if (confirm("Eintrag wirklich löschen?")) deleteEntry(e.id); };
+      act.appendChild(bDel);
+    }
+    div.appendChild(act);
+    return div;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  // ---- View: Heute ----
+  function renderHeute() {
+    var box = document.getElementById("heuteList");
+    box.innerHTML = "";
+    var due = entries
+      .filter(function (e) { return !e.discarded && daysUntil(e) <= 0; })
+      .sort(function (a, b) { return daysUntil(a) - daysUntil(b); });
+
+    var badge = document.getElementById("navBadge");
+    if (due.length) { badge.textContent = due.length; badge.style.display = ""; }
+    else { badge.style.display = "none"; }
+
+    if (!due.length) {
+      box.innerHTML = '<div class="empty"><div class="big">✅</div>Heute muss nichts weggeworfen werden.</div>';
+      return;
+    }
+    due.forEach(function (e) { box.appendChild(itemRow(e, { throwAction: true })); });
+  }
+
+  // ---- View: Bestand ----
+  function renderBestand() {
+    var box = document.getElementById("bestandList");
+    box.innerHTML = "";
+    var active = entries
+      .filter(function (e) { return !e.discarded; })
+      .sort(function (a, b) { return daysUntil(a) - daysUntil(b); });
+
+    var nk = 0, ns = 0;
+    active.forEach(function (e) { if (e.type === "kuchen") nk += e.quantity; else ns += e.quantity; });
+    document.getElementById("bestandSummary").textContent =
+      active.length + " Posten im Buch · 🍰 " + nk + " Kuchen · 🥪 " + ns + " Snacks";
+
+    if (!active.length) {
+      box.innerHTML = '<div class="empty"><div class="big">📭</div>Noch nichts eingetragen.</div>';
+      return;
+    }
+    active.forEach(function (e) {
+      box.appendChild(itemRow(e, { throwAction: true, deleteAction: true }));
+    });
+  }
+
+  // ---- View: Statistik ----
+  function renderStatistik() {
+    var thrownTotal = 0, usedTotal = 0, weekThrown = 0;
+    var k = { used: 0, thrown: 0 }, s = { used: 0, thrown: 0 };
+    var weekStart = addDays(todayYMD(), -6);
+    var recent = [];
+
+    entries.forEach(function (e) {
+      if (!e.discarded) return;
+      var thrown = e.discardedQty || 0;
+      var used = e.quantity - thrown;
+      thrownTotal += thrown; usedTotal += used;
+      (e.type === "kuchen" ? k : s).thrown += thrown;
+      (e.type === "kuchen" ? k : s).used += used;
+      if (e.discardedDate && diffDays(weekStart, e.discardedDate) >= 0) weekThrown += thrown;
+      if (thrown > 0) recent.push(e);
+    });
+
+    document.getElementById("stWeek").textContent = weekThrown;
+    document.getElementById("stTotal").textContent = thrownTotal;
+    document.getElementById("kUsed").textContent = k.used;
+    document.getElementById("kThrown").textContent = k.thrown;
+    document.getElementById("sUsed").textContent = s.used;
+    document.getElementById("sThrown").textContent = s.thrown;
+
+    var total = thrownTotal + usedTotal;
+    var rate = total ? Math.round((thrownTotal / total) * 100) : 0;
+    document.getElementById("rateText").textContent =
+      total ? (rate + "% weggeworfen (" + thrownTotal + " von " + total + " erfassten Stück)") : "Noch keine Abschreibungen erfasst.";
+    document.getElementById("rateBar").style.width = rate + "%";
+
+    var rl = document.getElementById("recentList");
+    rl.innerHTML = "";
+    if (!recent.length) { rl.innerHTML = '<div class="hint">Noch nichts weggeworfen.</div>'; return; }
+    recent.sort(function (a, b) { return a.discardedDate < b.discardedDate ? 1 : -1; })
+      .slice(0, 12)
+      .forEach(function (e) {
+        var d = document.createElement("div");
+        d.className = "meta"; d.style.padding = "4px 0"; d.style.borderBottom = "1px solid var(--line)";
+        d.innerHTML = '<span class="tag ' + e.type + '">' + (e.type === "kuchen" ? "Kuchen" : "Snack") + '</span>' +
+          formatDE(e.discardedDate) + ": " + e.discardedQty + "× " + escapeHtml(e.name) + " weggeworfen";
+        rl.appendChild(d);
+      });
+  }
+
+  function renderAll() { renderHeute(); renderBestand(); renderStatistik(); }
+
+  // ---- Eintragen-Formular ----
+  var formType = "kuchen";
+  function setType(t) {
+    formType = t;
+    document.getElementById("typeKuchen").classList.toggle("sel", t === "kuchen");
+    document.getElementById("typeSnack").classList.toggle("sel", t === "snack");
+    updatePreview();
+  }
+  function updatePreview() {
+    var date = document.getElementById("fDate").value || todayYMD();
+    var dd = addDays(date, LIFESPAN[formType] - 1);
+    document.getElementById("expiryPreview").innerHTML =
+      "→ Haltbar bis <b>" + weekdayAbend(dd) + ", " + formatDE(dd) + "</b> (" + LIFESPAN[formType] + " Tage).";
+  }
+
+  // ---- Navigation ----
+  function showView(name) {
+    var nav = document.querySelectorAll("nav button");
+    for (var i = 0; i < nav.length; i++) nav[i].classList.toggle("active", nav[i].getAttribute("data-view") === name);
+    var views = document.querySelectorAll(".view");
+    for (var j = 0; j < views.length; j++) views[j].classList.remove("active");
+    document.getElementById("view-" + name).classList.add("active");
+  }
+
+  // ---- Init ----
+  function init() {
+    load();
+    var now = new Date();
+    document.getElementById("todayLabel").textContent = WD[now.getDay()] + ", " + formatDE(todayYMD());
+    document.getElementById("fDate").value = todayYMD();
+
+    document.querySelectorAll("nav button").forEach(function (b) {
+      b.addEventListener("click", function () { showView(b.getAttribute("data-view")); });
+    });
+    document.getElementById("typeKuchen").addEventListener("click", function () { setType("kuchen"); });
+    document.getElementById("typeSnack").addEventListener("click", function () { setType("snack"); });
+    document.getElementById("fDate").addEventListener("change", updatePreview);
+
+    document.getElementById("addBtn").addEventListener("click", function () {
+      var name = document.getElementById("fName").value.trim();
+      var qty = parseInt(document.getElementById("fQty").value, 10);
+      var date = document.getElementById("fDate").value || todayYMD();
+      if (!name) { toast("Bitte eine Bezeichnung eingeben."); return; }
+      if (!qty || qty < 1) { toast("Bitte eine gültige Menge eingeben."); return; }
+      addEntry(formType, name, qty, date);
+      document.getElementById("fName").value = "";
+      document.getElementById("fQty").value = "1";
+      document.getElementById("fDate").value = todayYMD();
+      renderAll(); updatePreview();
+      toast("Eingetragen ✓");
+      showView("bestand");
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", function () {
+      if (confirm("Wirklich ALLE Einträge und Statistiken löschen? Das kann nicht rückgängig gemacht werden.")) {
+        entries = []; save(); renderAll(); toast("Alle Daten gelöscht");
+      }
+    });
+
+    setType("kuchen");
+    renderAll();
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+</body>
+</html>
