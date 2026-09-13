@@ -92,13 +92,6 @@
       "category": "productivity"
     },
     {
-      "name": "industry-insights",
-      "description": "Turn a business profile plus a corpus of videos, posts and transcripts into a deduplicated, prioritized playbook of industry-specific tips and tricks",
-      "version": "0.1.0",
-      "source": "./plugins/industry-insights",
-      "category": "productivity"
-    },
-    {
       "name": "learning-output-style",
       "description": "Interactive learning mode that requests meaningful code contributions at decision points (mimics the unshipped Learning output style)",
       "version": "1.0.0",
